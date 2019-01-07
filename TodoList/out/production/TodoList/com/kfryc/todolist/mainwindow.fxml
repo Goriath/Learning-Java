@@ -12,7 +12,7 @@
                     <items>
                         <MenuItem text="New Todo" onAction="#showNewItemDialog"/>
                         <SeparatorMenuItem/>
-                        <MenuItem text="Exit"/>
+                        <MenuItem text="Exit" onAction="#handleExit"/>
                     </items>
                 </Menu>
             </MenuBar>
@@ -28,6 +28,11 @@
                             </ImageView>
                         </graphic>
                     </Button>
+                    <ToggleButton fx:id="filterToggleButton" text="Today's Items" onAction="#handleFilterButton">
+                        <tooltip>
+                            <Tooltip text="Button Down: Show Today's items only. Button up: Show all items"/>
+                        </tooltip>
+                    </ToggleButton>
                 </HBox>
             </ToolBar>
         </VBox>
@@ -39,7 +44,7 @@
     </left>
     <center>
         <VBox style="-fx-background-color: white">
-            <TextArea wrapText="true" fx:id="textArea" VBox.vgrow="ALWAYS"/>  <!--takes the most space as possible -->
+            <TextArea wrapText="true" fx:id="itemDetailsTextArea" VBox.vgrow="ALWAYS"/>  <!--takes the most space as possible -->
             <HBox>
                 <Label text="Due: " style="-fx-background-color: white">
                     <font>
