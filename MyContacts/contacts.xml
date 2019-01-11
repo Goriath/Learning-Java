@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<contacts>
+<contact>
+	<first_name>Data</first_name>
+	<last_name>Protection</last_name>
+	<phone_number>1513421</phone_number>
+	<notes>RODO cannot be stopped</notes>
+</contact>
+<contact>
+	<first_name>Krzysztof</first_name>
+	<last_name>Fryc</last_name>
+	<phone_number>12345121</phone_number>
+	<notes>My phone</notes>
+</contact>
+<contact>
+	<first_name>Somebody</first_name>
+	<last_name>Once Told Me</last_name>
+	<phone_number>987654321</phone_number>
+	<notes>The world will gonna roll me</notes>
+</contact>
+</contacts>
