@@ -7,24 +7,30 @@ public class Locations implements Map<Integer, Location> {
     private static Map<Integer, Location> locations = new LinkedHashMap<>();
 
     public static void main(String[] args) throws IOException {
-        //try with resources using Byte Streams and saving both locations and directions in single file "locations.dat"
-        try (DataOutputStream locFile = new DataOutputStream(new BufferedOutputStream(new FileOutputStream("locations.dat")))){
+        //can be used when the class (and classes that are also being used) implements Serializable
+        try (ObjectOutputStream locFile = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream("locations.dat")))){
             for(Location location : locations.values()){
-                locFile.writeInt(location.getLocationID()); //to write Integer
-                locFile.writeUTF(location.getDescription()); //to write String
-                System.out.println("Saving location " + location.getLocationID() + " : " + location.getDescription());
-                System.out.println("Saving " + (location.getExists().size() -1) + " exits");
-                locFile.writeInt(location.getExists().size() - 1);;
-                for (String direction : location.getExists().keySet()){
-                    if(!direction.equalsIgnoreCase("q")){
-                        System.out.println("\t\t" + direction + ", "+location.getExists().get(direction));
-                        locFile.writeUTF(direction);
-                        locFile.writeInt(location.getExists().get(direction));
-                    }
-                }
+                locFile.writeObject(location);
             }
         }
-        //try with resources using BufferedWriter - tidy and concise
+        //try with resources using Byte Streams and saving both locations and directions in single file "locations.dat"
+//        try (DataOutputStream locFile = new DataOutputStream(new BufferedOutputStream(new FileOutputStream("locations.dat")))){
+//            for(Location location : locations.values()){
+//                locFile.writeInt(location.getLocationID()); //to write Integer
+//                locFile.writeUTF(location.getDescription()); //to write String
+//                System.out.println("Saving location " + location.getLocationID() + " : " + location.getDescription());
+//                System.out.println("Saving " + (location.getExists().size() -1) + " exits");
+//                locFile.writeInt(location.getExists().size() - 1);;
+//                for (String direction : location.getExists().keySet()){
+//                    if(!direction.equalsIgnoreCase("q")){
+//                        System.out.println("\t\t" + direction + ", "+location.getExists().get(direction));
+//                        locFile.writeUTF(direction);
+//                        locFile.writeInt(location.getExists().get(direction));
+//                    }
+//                }
+//            }
+//        }
+        //try with resources using BufferedWriter
 //        try(BufferedWriter locFile = new BufferedWriter(new FileWriter("locations.txt"));
 //            BufferedWriter dirFile = new BufferedWriter(new FileWriter("directions.txt"))){
 //            for (Location location : locations.values()){
@@ -39,31 +45,50 @@ public class Locations implements Map<Integer, Location> {
     }
 
     static {
-        //Now reading locations and directions from location.dat
-        try (DataInputStream locFile = new DataInputStream(new BufferedInputStream(new FileInputStream("locations.dat")))){
+        //Now reading locations and directions from location.dat using ObjectInputStream (classes need to implement Serializable)
+        try (ObjectInputStream locFile = new ObjectInputStream(new BufferedInputStream(new FileInputStream("locations.dat")))){
             boolean eof = false;        //handling end of file exception, better mechanism to end the while loop
             while (!eof){
-                try{
-                    Map<String, Integer> exits = new LinkedHashMap<>();
-                    int locID = locFile.readInt();
-                    String description = locFile.readUTF();
-                    int numExits = locFile.readInt();
-                    System.out.println("Read location " + locID + " : " + description);
-                    System.out.println("Found " + numExits + " exits");
-                    for(int i=0;i<numExits;i++){
-                        String direction = locFile.readUTF();
-                        int destination = locFile.readInt();
-                        exits.put(direction, destination);
-                        System.out.println("\t\t" + direction + "," + destination);
-                    }
-                    locations.put(locID, new Location(locID, description, exits));
-                } catch (EOFException e){
+                try {
+                    Location location = (Location) locFile.readObject(); //need to cast it as compiler does not know what we might read
+                    System.out.println("Read location " + location.getLocationID() + " : " + location.getDescription());
+                    System.out.println("Found " + (location.getExists().size()-1) + " exits");
+
+                    locations.put(location.getLocationID(), location);
+                } catch (IOException e){
                     eof = true;
                 }
             }
         } catch (IOException e){
             System.out.println("IO exception");
+        } catch (ClassNotFoundException e){ //needed to catch for readObject() method
+            System.out.println("class not found exception" + e.getMessage());
         }
+        //Now reading locations and directions from location.dat using DataInputStream
+//        try (DataInputStream locFile = new DataInputStream(new BufferedInputStream(new FileInputStream("locations.dat")))){
+//            boolean eof = false;        //handling end of file exception, better mechanism to end the while loop
+//            while (!eof){
+//                try{
+//                    Map<String, Integer> exits = new LinkedHashMap<>();
+//                    int locID = locFile.readInt();
+//                    String description = locFile.readUTF();
+//                    int numExits = locFile.readInt();
+//                    System.out.println("Read location " + locID + " : " + description);
+//                    System.out.println("Found " + numExits + " exits");
+//                    for(int i=0;i<numExits;i++){
+//                        String direction = locFile.readUTF();
+//                        int destination = locFile.readInt();
+//                        exits.put(direction, destination);
+//                        System.out.println("\t\t" + direction + "," + destination);
+//                    }
+//                    locations.put(locID, new Location(locID, description, exits));
+//                } catch (EOFException e){
+//                    eof = true;
+//                }
+//            }
+//        } catch (IOException e){
+//            System.out.println("IO exception");
+//        }
 
         //Now reading locations from locations_big.txt
 //        try (Scanner scanner = new Scanner(new BufferedReader(new FileReader("locations_big.txt")))){
