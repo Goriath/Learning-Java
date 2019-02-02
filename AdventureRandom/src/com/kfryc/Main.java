@@ -1,5 +1,6 @@
 package com.kfryc;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -18,7 +19,7 @@ public class Main {
 
     private static Locations locations = new Locations();
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         Scanner scanner = new Scanner(System.in);
 
 
@@ -32,14 +33,14 @@ public class Main {
 
 
 
-        int loc = 1;
+        Location currentLocation = locations.getLocation(1);
         while(true){
-            System.out.println(locations.get(loc).getDescription());
-            if(loc==0){
+            System.out.println(currentLocation.getDescription());
+            if(currentLocation.getLocationID()==0){
                 break;
             }
 
-            Map<String,Integer> exits = locations.get(loc).getExists();
+            Map<String,Integer> exits = currentLocation.getExists();
             System.out.println("Available exits are ");
             for(String exit : exits.keySet()){
                 System.out.print(exit + ", ");
@@ -58,10 +59,12 @@ public class Main {
             }
 
             if(exits.containsKey(direction)){
-                loc = exits.get(direction);
+                currentLocation = locations.getLocation(currentLocation.getExists().get(direction));
             } else {
                 System.out.println("You cannot go in that direction");
             }
         }
+
+        locations.close();
     }
 }

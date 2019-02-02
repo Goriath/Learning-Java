@@ -6,6 +6,7 @@ import java.util.*;
 public class Locations implements Map<Integer, Location> {
     private static Map<Integer, Location> locations = new LinkedHashMap<>();
     private static Map<Integer, IndexRecord> index = new LinkedHashMap<>();
+    private static RandomAccessFile ra;
 
     public static void main(String[] args) throws IOException {
         //can be used when the class (and classes that are also being used) implements Serializable
@@ -17,8 +18,8 @@ public class Locations implements Map<Integer, Location> {
                                                                                                 // Generally for larger projects Long is preferable
             raFile.writeInt(locationStart);
             long indexStart = raFile.getFilePointer();
-            int startPointer = locationStart;
-            raFile.seek(startPointer);
+            int startPointer = locationStart;   //calculate location's record length after written to a file
+            raFile.seek(startPointer);          //move file pointer to the first location offset (only for first location)
 
             for (Location location : locations.values()){
                 raFile.writeInt(location.getLocationID());;
@@ -30,6 +31,8 @@ public class Locations implements Map<Integer, Location> {
                         builder.append(",");
                         builder.append(location.getExists().get(direction));
                         builder.append(",");
+                        //direction, locationID, direction, locationID
+                        // N,1,U,2...
                     }
                 }
                 raFile.writeUTF(builder.toString());
@@ -38,6 +41,13 @@ public class Locations implements Map<Integer, Location> {
                 index.put(location.getLocationID(), record);
 
                 startPointer = (int) raFile.getFilePointer();
+            }
+
+            raFile.seek(indexStart);
+            for(Integer locationID: index.keySet()){
+                raFile.writeInt(locationID);
+                raFile.writeInt(index.get(locationID).getStartByte());
+                raFile.writeInt(index.get(locationID).getLength());
             }
         }
     }
@@ -48,26 +58,44 @@ public class Locations implements Map<Integer, Location> {
     // 4. The final section of the file will contain the location records(the data). It will start at byte 1700
 
     static {
-        //Now reading locations and directions from location.dat using ObjectInputStream (classes need to implement Serializable)
-        try (ObjectInputStream locFile = new ObjectInputStream(new BufferedInputStream(new FileInputStream("locations.dat")))){
-            boolean eof = false;        //handling end of file exception, better mechanism to end the while loop
-            while (!eof){
-                try {
-                    Location location = (Location) locFile.readObject(); //need to cast it as compiler does not know what we might read
-                    System.out.println("Read location " + location.getLocationID() + " : " + location.getDescription());
-                    System.out.println("Found " + (location.getExists().size()-1) + " exits");
+        try {
+            ra = new RandomAccessFile("locations_rand.dat", "rwd");
+            int numLocations = ra.readInt();    // good practise to write the number of location in the beginning of the file
+            long locationStartPoint = ra.readInt();
 
-                    locations.put(location.getLocationID(), location);
-                } catch (IOException e){
-                    eof = true;
-                }
+            while(ra.getFilePointer() < locationStartPoint){
+                int locationId = ra.readInt();
+                int locationStart = ra.readInt();
+                int locationLength = ra.readInt();
+
+                IndexRecord record = new IndexRecord(locationStart, locationLength);
+                index.put(locationId, record);
             }
-        } catch (IOException e){
-            System.out.println("IO exception");
-        } catch (ClassNotFoundException e){ //needed to catch for readObject() method
-            System.out.println("class not found exception" + e.getMessage());
+        }catch (IOException e){
+            System.out.println("IOException in static initializer: " + e.getMessage());
+        }
+    }
+
+    public Location getLocation(int locationId) throws IOException{
+        IndexRecord record = index.get(locationId);
+        ra.seek(record.getStartByte());
+        int id = ra.readInt();
+        String description = ra.readUTF();
+        String exits = ra.readUTF();
+        String[] exitPart = exits.split(",");
+
+        Location location = new Location(locationId, description, null);    //null will avoid adding a new LinkedHashMap (in constructor)
+        if(locationId != 0){
+            for(int i =0; i<exitPart.length;i++){
+                System.out.println("exitPart = " + exitPart[i]);
+                System.out.println("exitPart[i] = " + exitPart[i+1]);
+                String direction = exitPart[i];
+                int destination = Integer.parseInt(exitPart[++i]);
+                location.addExit(direction, destination);
+            }
         }
 
+        return location;
     }
 
     @Override
@@ -128,5 +156,9 @@ public class Locations implements Map<Integer, Location> {
     @Override
     public Set<Entry<Integer, Location>> entrySet() {
         return locations.entrySet();
+    }
+
+    public void close() throws IOException{
+        ra.close();
     }
 }
