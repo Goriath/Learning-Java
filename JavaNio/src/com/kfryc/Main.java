@@ -3,6 +3,7 @@ package com.kfryc;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.FileSystems;
@@ -18,33 +19,100 @@ public class Main {
         try (FileOutputStream binFile = new FileOutputStream("data.dat");
              FileChannel binChannel = binFile.getChannel()) {
             // Writing Binary files using NIO
+            ByteBuffer buffer = ByteBuffer.allocate(100);
+
+
+//            // Chaining methods
+//            byte[] outputBytes = "Hello World!".getBytes();
+//            byte[] outputBytes2 = "Have a great day!".getBytes();
+//            buffer.put(outputBytes).putInt(245).putInt(-98765).put(outputBytes2).putInt(1000);
+//            buffer.flip();
+
+
             byte[] outputBytes = "Hello World!".getBytes();
-            ByteBuffer buffer = ByteBuffer.wrap(outputBytes);   //resets the position of the buffer - needed to write new data
-            int numBytes = binChannel.write(buffer);
-            System.out.println("numBytes written was: " + numBytes);
+            buffer.put(outputBytes);
+            long int1Pos = outputBytes.length;
+            buffer.putInt(245);
+            long int2Pos = int1Pos + Integer.BYTES;
+            buffer.putInt(-98765);
+            byte[] outputBytes2 = "Have a great day!".getBytes();
+            buffer.put(outputBytes2);
+            long int3Pos = int2Pos + Integer.BYTES + outputBytes2.length;
+            buffer.putInt(1000);
+            buffer.flip();
 
-            ByteBuffer intBuffer = ByteBuffer.allocate(Integer.BYTES);  //passing the size of the buffer to be for Integer
-            intBuffer.putInt(345);
-            intBuffer.flip();   //resets the buffer position to zero in the ByteBuffer, this enables us to write to file
-            numBytes = binChannel.write(intBuffer);
-            System.out.println("numBytes written was: " + numBytes);
+            binChannel.write(buffer);
 
-            intBuffer.flip();   //resets the buffer position to zero in the ByteBuffer, this enables us to write to file
+            RandomAccessFile ra = new RandomAccessFile("data.dat", "rwd");
+            FileChannel channel = ra.getChannel();
+
+            ByteBuffer readBuffer = ByteBuffer.allocate(100);
+
+
+            // Reading values in reverse
+            channel.position(int3Pos);
+            channel.read(readBuffer);
+            readBuffer.flip();
+            System.out.println("int3 = "+ readBuffer.getInt());
+
+            readBuffer.flip();
+            channel.position(int2Pos);
+            channel.read(readBuffer);
+            readBuffer.flip();
+
+            System.out.println("int2 = "+ readBuffer.getInt());
+            readBuffer.flip();
+            channel.position(int1Pos);
+            channel.read(readBuffer);
+            readBuffer.flip();
+
+            System.out.println("int1 = "+ readBuffer.getInt());
+
+
+
+//            byte[] inputString = new byte[outputBytes.length];
+//            readBuffer.get(inputString);
+//            System.out.println("inputString = " + new String(inputString));
+//            System.out.println("int1 = "+ readBuffer.getInt());
+//            System.out.println("int2 = "+ readBuffer.getInt());
+//            byte[] inputString2 = new byte[outputBytes2.length];
+//            readBuffer.get(inputString2);
+//            System.out.println("inputString2 = " + new String(inputString2));
+//            System.out.println("int3 = "+ readBuffer.getInt());
+
+
+            // Writing data sequentially
+            byte[] outputString = "Hello World!".getBytes();
+            long str1Pos = 0;
+            long newInt1Pos = outputString.length;
+            long newInt2Pos = newInt1Pos + Integer.BYTES;
+            byte[] outputString2 = "Have a great day!".getBytes();
+            long str2Pos = newInt2Pos + Integer.BYTES;
+            long newInt3Pos = str2Pos + outputString2.length;
+
+            ByteBuffer intBuffer = ByteBuffer.allocate(Integer.BYTES);
+            intBuffer.putInt(245);
+            intBuffer.flip();
+            binChannel.position(newInt1Pos);
+            binChannel.write(intBuffer);
+            intBuffer.flip();
+
             intBuffer.putInt(-98765);
-            intBuffer.flip();   //resets the buffer position to zero in the ByteBuffer, this enables us to write to file
-            numBytes = binChannel.write(intBuffer);
-            System.out.println("numBytes written was: " + numBytes);
+            intBuffer.flip();
 
-//            FileInputStream file = new FileInputStream("data.txt");
-//            FileChannel channel = file.getChannel();  //this will only enable us to read the file (because of FileInputStream)
+            binChannel.position(newInt2Pos);
+            binChannel.write(intBuffer);
+            intBuffer.flip();
 
-//            Path dataPath = FileSystems.getDefault().getPath("data.txt");
-//            //Files.write sends bytes (not string), so we need to convert the string to Bytes
-//            Files.write(dataPath, "\nLine 5".getBytes("UTF-8"), StandardOpenOption.APPEND);
-//            List<String> lines = Files.readAllLines(dataPath);
-//            for(String line : lines){
-//                System.out.println(line);
-//            }
+            intBuffer.putInt(1000);
+            intBuffer.flip();
+            binChannel.position(newInt3Pos);
+            binChannel.write(intBuffer);
+
+            binChannel.position(str1Pos);
+            binChannel.write(ByteBuffer.wrap(outputString));
+            binChannel.position(str2Pos);
+            binChannel.write(ByteBuffer.wrap(outputString2));
 
         } catch (IOException e){
             e.printStackTrace();
