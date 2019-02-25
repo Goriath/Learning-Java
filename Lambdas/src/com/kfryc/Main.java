@@ -1,9 +1,7 @@
 package com.kfryc;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
+import java.util.function.*;
 
 public class Main {
 
@@ -29,7 +27,7 @@ public class Main {
         Employee pawel = new Employee("Pawel Nowak", 35);
         Employee krzysztof = new Employee("Krzysztof Fryc", 32);
         Employee magda = new Employee("Magda Kowalska", 30);
-        Employee anna = new Employee("Anna Rodo", 28);
+        Employee anna = new Employee("Anna Rodo", 25);
 
 
         List<Employee> employees = new ArrayList<>();
@@ -50,6 +48,16 @@ public class Main {
 //            System.out.println(employee.getAge());
 //            //new Thread(() -> System.out.println(employee.getAge())).start();
 //        }
+
+        //Printing employees based on Predicate
+        printEmployeesByAge(employees, "Employees over 30", employee -> employee.getAge() > 30);
+        printEmployeesByAge(employees, "Employees 30 and under", employee -> employee.getAge() <= 30);
+        printEmployeesByAge(employees, "Employees younger than 26", new Predicate<Employee>() {
+            @Override
+            public boolean test(Employee employee) {
+                return employee.getAge() <= 25;
+            }
+        });
 
 
         // Variables can be changed within lambda expression but not variables that are outside lambda
@@ -102,6 +110,89 @@ public class Main {
 //        String s = anotherClass.doSomething();
 //        System.out.println(s);
 
+
+//        // Using Predicate to filter
+//        IntPredicate greaterThan15 = i -> i > 15;
+//        IntPredicate lessThan100 = i -> i < 100;
+//        System.out.println(greaterThan15.test(10));
+//        int a = 20;
+//        System.out.println(greaterThan15.test(a + 5));
+//
+//        System.out.println(greaterThan15.and(lessThan100).test(50));
+//        System.out.println(greaterThan15.and(lessThan100).test(10));
+
+//        // Using Supplier and lambda to generate 10 numbers
+//        Random random = new Random();
+//        Supplier<Integer> randomSupplier = () -> random.nextInt(100);
+//        for(int i = 0;i<10;i++){
+//            System.out.println(randomSupplier.get());
+//        }
+
+//        // Printing last names using foreach
+//        employees.forEach(employee ->{
+//            String lastName = employee.getName().substring(employee.getName().indexOf(' ')+1);
+//            System.out.println("Last Name is: " + lastName);
+//                });
+        Function<Employee, String> getLastName = (Employee employee) -> {
+            return employee.getName().substring(employee.getName().indexOf(' ') + 1);
+        };
+
+        String lastName = getLastName.apply(employees.get(1));
+        System.out.println(lastName);
+
+        Function<Employee, String> getFirstName = (Employee employee) -> {
+            return employee.getName().substring(0, employee.getName().indexOf(' '));
+        };
+
+        Random random1 = new Random();
+        for (Employee employee : employees) {
+            if (random1.nextBoolean()) {
+                System.out.println(getAName(getFirstName, employee));
+            } else {
+                System.out.println(getAName(getLastName, employee));
+            }
+        }
+
+        // Chaining functions
+        Function<Employee, String> upperCase = employee -> employee.getName().toUpperCase();
+        Function<String, String> firstName = name -> name.substring(0, name.indexOf(' '));
+        Function chainedFunction = upperCase.andThen(firstName);
+        System.out.println(chainedFunction.apply(employees.get(1)));
+
+
+        // Creating function with two arguments
+        BiFunction<String, Employee, String> concatAge = (String name, Employee employee) -> {
+            return name.concat(" " + employee.getAge());
+        };
+
+        String upperName = upperCase.apply(employees.get(1));
+        System.out.println(concatAge.apply(upperName, employees.get(1)));
+
+        // Special function that accepts and returns Integer
+        IntUnaryOperator incBy5 = i -> i + 5;
+        System.out.println(incBy5.applyAsInt(10));
+
+        Consumer<String> c1 = s -> s.toUpperCase();
+        Consumer<String> c2 = s -> System.out.println(s);
+        c1.andThen(c2).accept("Hello, World");
+
+    }
+
+    private static String getAName(Function<Employee, String> getName, Employee employee) {
+        return getName.apply(employee);
+    }
+
+    private static void printEmployeesByAge(List<Employee> employees,
+                                            String ageText,
+                                            Predicate<Employee> ageCondition) {
+        System.out.println("=================");
+        System.out.println(ageText);
+        System.out.println("-----------------");
+        for (Employee employee : employees) {
+            if (ageCondition.test(employee)) {
+                System.out.println(employee.getName());
+            }
+        }
     }
 
     public final static String doStringStuff(UpperConcat uc, String s1, String s2) {
